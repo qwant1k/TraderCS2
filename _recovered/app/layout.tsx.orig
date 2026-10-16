@@ -1,0 +1,48 @@
+import "./globals.css";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { currentUser } from "@/lib/session";
+import Avatar from "@/components/Avatar";
+
+export const metadata: Metadata = {
+  title: "TradeGG — обмен скинов",
+  description: "Обмен предметов Steam между игроками без купли-продажи",
+};
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const user = await currentUser();
+  return (
+    <html lang="ru">
+      <body>
+        <header className="top">
+          <div className="wrap">
+            <Link href="/" className="logo">
+              <i />
+              <span>Trade<b>GG</b></span>
+            </Link>
+            <nav>
+              <Link href="/listings">Лоты</Link>
+              {user && <Link href="/inventory">Выставить</Link>}
+              {user && <Link href="/my">Мои обмены</Link>}
+              {user && <Link href="/settings">Настройки</Link>}
+            </nav>
+            {user ? (
+              <div className="user">
+                <Link href={`/u/${user.steamId}`} className="row" style={{ gap: 8 }}>
+                  <Avatar src={user.avatar} name={user.name} size={30} />
+                  <span className="name">{user.name}</span>
+                </Link>
+                <form action="/api/auth/logout" method="post">
+                  <button className="btn secondary" type="submit">Выйти</button>
+                </form>
+              </div>
+            ) : (
+              <a className="btn" href="/api/auth/steam">Войти через Steam</a>
+            )}
+          </div>
+        </header>
+        <main className="wrap">{children}</main>
+      </body>
+    </html>
+  );
+}

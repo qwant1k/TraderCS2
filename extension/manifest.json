@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "TradeGG Helper",
+  "version": "0.2.0",
+  "description": "Подставляет предметы в окно обмена Steam из принятого предложения TradeGG и проверяет, что трейд не изменили.",
+  "permissions": [
+    "storage"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://steamcommunity.com/tradeoffer/new/*"
+      ],
+      "js": [
+        "steam.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "http://localhost:3000/*"
+      ],
+      "js": [
+        "site.js"
+      ],
+      "run_at": "document_start"
+    }
+  ]
+}

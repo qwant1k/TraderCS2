@@ -1,0 +1,90 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import InventoryBrowser from "./InventoryBrowser";
+
+const MAX_VARIANTS = 5;
+
+export default function CreateListing() {
+  const router = useRouter();
+  const [selected, setSelected] = useState<string[]>([]);
+  const [type, setType] = useState<"OPEN" | "SPECIFIC">("OPEN");
+  const [variants, setVariants] = useState<string[]>([""]);
+  const [note, setNote] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const setVariant = (i: number, v: string) => setVariants(variants.map((x, j) => (j === i ? v : x)));
+
+  async function submit() {
+    setBusy(true);
+    setError(null);
+    const r = await fetch("/api/listings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, variants, note, assetIds: selected }),
+    });
+    const j = await r.json();
+    setBusy(false);
+    if (!r.ok) return setError(j.message || "Не удалось создать лот");
+    router.push(`/listings/${j.id}`);
+  }
+
+  return (
+    <InventoryBrowser
+      selected={selected}
+      onChange={setSelected}
+      stagingTitle="Ожидают предложений"
+      stagingHint="Предметы, которые вы отдаёте. Когда опубликуете, другие игроки смогут присылать предложения."
+    >
+      <div className="staging-form">
+        <div className="row" style={{ gap: 18 }}>
+          <label className="chk">
+            <input type="radio" checked={type === "OPEN"} onChange={() => setType("OPEN")} /> Открыт для предложений
+          </label>
+          <label className="chk">
+            <input type="radio" checked={type === "SPECIFIC"} onChange={() => setType("SPECIFIC")} /> Хочу конкретное
+          </label>
+        </div>
+
+        <label>
+          {type === "SPECIFIC"
+            ? "Что хотите получить. Можно несколько вариантов: подойдёт любой из них"
+            : "Пожелания (необязательно). Можно несколько вариантов"}
+        </label>
+        {variants.map((v, i) => (
+          <div className="row" key={i} style={{ marginBottom: 6, flexWrap: "nowrap" }}>
+            <span className="vnum">{i + 1}</span>
+            <input
+              value={v}
+              onChange={(e) => setVariant(i, e.target.value)}
+              maxLength={200}
+              placeholder={i === 0 ? "Например: AK-47 | Redline (FT)" : "Или: другой вариант"}
+            />
+            {variants.length > 1 && (
+              <button className="btn secondary" type="button" onClick={() => setVariants(variants.filter((_, j) => j !== i))}>
+                ×
+              </button>
+            )}
+          </div>
+        ))}
+        {variants.length < MAX_VARIANTS && (
+          <button className="btn secondary" type="button" onClick={() => setVariants([...variants, ""])}>
+            + Добавить вариант
+          </button>
+        )}
+
+        <label>Комментарий (необязательно)</label>
+        <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} />
+
+        {error && <div className="msg err">{error}</div>}
+        <p style={{ marginBottom: 0 }}>
+          <button className="btn" disabled={busy || selected.length === 0} onClick={submit}>
+            {busy ? "Публикую…" : "Выставить на обмен"}
+          </button>
+        </p>
+      </div>
+    </InventoryBrowser>
+  );
+}

@@ -1,0 +1,195 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Для разработки SQLite. Для продакшена смените provider на "postgresql".
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  steamId            String              @unique
+  name               String
+  avatar             String?
+  tradeUrl           String?
+  email               String?
+  emailVerifiedAt    DateTime?
+  bio                 String?
+  discord             String?
+  telegram            String?
+  socialVerifiedAt   DateTime?
+  createdAt          DateTime            @default(now())
+  listings           Listing[]
+  offers             Offer[]
+  wants               Want[]
+  activeListingItems ActiveListingItem[]
+}
+
+// type: SPECIFIC (хочу конкретное) | OPEN (открыт для предложений)
+// status: ACTIVE | CLOSED | CANCELLED
+model Listing {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  status    String   @default("ACTIVE")
+  wanted    String?
+  variantsJson String @default("[]")
+  note      String?
+  itemsJson String
+  createdAt DateTime @default(now())
+  offers    Offer[]
+  items     ListingItem[]
+  wants     Want[]
+  activeItems ActiveListingItem[]
+
+  @@index([status, createdAt])
+  @@index([userId, status])
+}
+
+// Предметы лота отдельными строками: для поиска, фильтров и подбора пар
+model ListingItem {
+  id        String   @id @default(cuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  assetId   String
+  appId     Int
+  contextId String
+  hash      String
+  dataJson  String
+  baseKey   String   @default("") // название без износа/StatTrak, в нижнем регистре
+  name      String   @default("")
+  type      String?
+  weapon    String?
+  wear      String?
+  float     Float?
+  seed      Int?
+  stattrak  Boolean  @default(false)
+  price     Float?   // USD на момент выставления
+
+  @@unique([listingId, assetId])
+  @@index([baseKey])
+  @@index([hash])
+}
+
+// Пожелание: вариант лота (listingId) или пункт списка желаемого (listingId = null)
+// kind: ITEM (конкретный предмет) | CATEGORY (любой нож/перчатки…) | PRICE (любой предмет в диапазоне цен) | TEXT (свободный текст, без подбора)
+model Want {
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  listingId String?
+  listing   Listing? @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  kind      String
+  base      String?
+  baseKey   String?
+  category  String?
+  floatMin  Float?
+  floatMax  Float?
+  stattrak  Boolean?
+  priceMin  Float?
+  priceMax  Float?
+  text      String?
+  label     String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([listingId])
+  @@index([baseKey])
+}
+
+// status: PENDING | ACCEPTED | DECLINED | CANCELLED | INVALID
+model Offer {
+  id                String      @id @default(cuid())
+  listingId         String
+  listing           Listing     @relation(fields: [listingId], references: [id])
+  userId            String
+  user              User        @relation(fields: [userId], references: [id])
+  itemsJson         String
+  variantId         String?
+  message           String?
+  status            String      @default("PENDING")
+  createdAt         DateTime    @default(now())
+  ownerConfirmedAt  DateTime?
+  authorConfirmedAt DateTime?
+  completedAt       DateTime?
+  items             OfferItem[]
+
+  @@index([listingId, status])
+  @@index([userId, createdAt])
+}
+
+model OfferItem {
+  id        String @id @default(cuid())
+  offerId   String
+  offer     Offer  @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  assetId   String
+  appId     Int
+  contextId String
+  hash      String
+  dataJson  String
+
+  @@unique([offerId, assetId])
+  @@index([assetId])
+}
+
+model ActiveListingItem {
+  id        String  @id @default(cuid())
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assetId   String
+  appId     Int
+  contextId String
+
+  @@unique([userId, appId, contextId, assetId])
+  @@unique([listingId, assetId])
+  @@index([listingId])
+}
+
+model InventoryCache {
+  steamId   String   @id
+  json      String
+  fetchedAt DateTime
+}
+
+// Снимки цен для графика динамики (копятся по мере просмотра карточек)
+model PriceSnapshot {
+  id      String   @id @default(cuid())
+  hash    String
+  steam   Float?
+  skinport Float?
+  at      DateTime @default(now())
+
+  @@index([hash, at])
+}
+
+// Локальный каталог скинов CS2. Заполняется командой npm run catalog:sync.
+model SkinCatalog {
+  id          String   @id
+  baseKey     String
+  name        String
+  searchKey   String
+  weapon      String
+  weaponId    String?
+  category    String
+  pattern     String?
+  rarity      String?
+  rarityColor String?
+  image       String?
+  minFloat    Float?
+  maxFloat    Float?
+  paintIndex  String?
+  wearsJson   String   @default("[]")
+  stattrak    Boolean  @default(false)
+  souvenir    Boolean  @default(false)
+  updatedAt   DateTime @updatedAt
+
+  @@index([baseKey])
+  @@index([searchKey])
+  @@index([weapon])
+  @@index([category])
+}
