@@ -4,10 +4,20 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import InventoryBrowser from "./InventoryBrowser";
 
-export default function MakeOffer({ listingId, variants }: { listingId: string; variants: { id: string; text: string }[] }) {
+export default function MakeOffer({
+  listingId,
+  variants,
+  initialSelected = [],
+  initialVariantId = "",
+}: {
+  listingId: string;
+  variants: { id: string; text: string }[];
+  initialSelected?: string[];
+  initialVariantId?: string;
+}) {
   const router = useRouter();
-  const [selected, setSelected] = useState<string[]>([]);
-  const [variantId, setVariantId] = useState("");
+  const [selected, setSelected] = useState<string[]>(initialSelected);
+  const [variantId, setVariantId] = useState(initialVariantId);
   const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

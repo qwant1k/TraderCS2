@@ -35,7 +35,7 @@ export default async function MyPage() {
         <div className="msg err">Без трейд-ссылки обмен не откроется. <Link href="/settings?setup=1">Добавить в настройках</Link></div>
       )}
 
-      <h2>Мои лоты</h2>
+      <h2 id="listings">Мои лоты</h2>
       {listings.length === 0 && <div className="muted">Лотов нет. <Link href="/inventory">Выставить предметы</Link></div>}
       {listings.map((l) => (
         <div className="card" key={l.id}>
@@ -48,7 +48,7 @@ export default async function MyPage() {
         </div>
       ))}
 
-      <h2>Мои предложения</h2>
+      <h2 id="offers">Мои предложения</h2>
       {offers.length === 0 && <div className="muted">Вы ещё ничего не предлагали.</div>}
       {offers.map((o) => {
         const offered = storedItems(o.items, o.itemsJson);

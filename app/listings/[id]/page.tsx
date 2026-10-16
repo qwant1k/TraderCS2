@@ -12,8 +12,15 @@ import { storedItems } from "@/lib/items";
 
 export const dynamic = "force-dynamic";
 
-export default async function ListingPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ListingPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ pick?: string; v?: string }>;
+}) {
   const { id } = await params;
+  const query = await searchParams;
   const [user, listing] = await Promise.all([
     currentUser(),
     db.listing.findUnique({
@@ -105,7 +112,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
       {!isOwner && listing.status === "ACTIVE" && (
         user ? (
           user.tradeUrl ? (
-            myPending ? <div className="msg">Ваше предложение отправлено. Статус в разделе <Link href="/my">«Мои обмены»</Link>.</div> : <MakeOffer listingId={listing.id} variants={variants} />
+            myPending ? <div className="msg">Ваше предложение отправлено. Статус в разделе <Link href="/my">«Мои обмены»</Link>.</div> : <MakeOffer listingId={listing.id} variants={variants} initialSelected={query.pick?.split(",").filter(Boolean).slice(0, 10) ?? []} initialVariantId={variants.some((variant) => variant.id === query.v) ? query.v : ""} />
           ) : (
             <div className="msg err">Добавьте трейд-ссылку в <Link href="/settings?setup=1">настройках</Link>, чтобы отправлять предложения.</div>
           )

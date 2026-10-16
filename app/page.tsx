@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { currentUser } from "@/lib/session";
 import Avatar from "@/components/Avatar";
 import { storedItems } from "@/lib/items";
+import TradeDashboard from "@/components/TradeDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,8 @@ const formatCount = (value: number) => new Intl.NumberFormat("ru-RU").format(val
 export default async function Home({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const query = await searchParams;
   const user = await currentUser();
+  if (user) return <TradeDashboard hasTradeUrl={!!user.tradeUrl} />;
+
   const [users, active, done, activeItems, rows] = await Promise.all([
     db.user.count(),
     db.listing.count({ where: { status: "ACTIVE" } }),

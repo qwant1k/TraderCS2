@@ -25,7 +25,12 @@ export async function GET(req: NextRequest) {
     const active = await db.activeListingItem.findMany({ where: { userId: user.id }, select: { assetId: true } });
     const busy = active.map((i) => i.assetId);
 
-    return NextResponse.json({ items: tradable, prices, busy });
+    const cache = await db.inventoryCache.findUnique({
+      where: { steamId: user.steamId },
+      select: { fetchedAt: true },
+    });
+
+    return NextResponse.json({ items: tradable, prices, busy, fetchedAt: cache?.fetchedAt.toISOString() ?? null });
   } catch (e) {
     if (e instanceof InventoryError) {
       return NextResponse.json({ error: e.code, message: e.message }, { status: e.code === "private" ? 403 : 502 });

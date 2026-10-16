@@ -2,7 +2,31 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  images: { unoptimized: true },
+  images: {
+    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "community.cloudflare.steamstatic.com",
+        pathname: "/economy/image/**",
+      },
+      {
+        protocol: "https",
+        hostname: "steamcommunity-a.akamaihd.net",
+        pathname: "/economy/image/**",
+      },
+      {
+        protocol: "https",
+        hostname: "community.akamai.steamstatic.com",
+        pathname: "/economy/image/**",
+      },
+      {
+        protocol: "https",
+        hostname: "avatars.cloudflare.steamstatic.com",
+        pathname: "/**",
+      },
+    ],
+  },
   async headers() {
     return [
       {
